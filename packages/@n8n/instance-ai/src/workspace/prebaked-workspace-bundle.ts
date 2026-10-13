@@ -5,7 +5,11 @@ import {
 	writeWorkspaceFileMap,
 	type WorkspaceFileTarget,
 } from './workspace-files';
-import { parseVersionedWorkspaceManifest } from './workspace-manifest';
+import {
+	describeManifestFileDifference,
+	listManifestFiles,
+	parseVersionedWorkspaceManifest,
+} from './workspace-manifest';
 import { traceSandboxOperation, sandboxFileBytes } from '../tracing/sandbox-tracing';
 
 /**
@@ -38,6 +42,7 @@ export async function loadPrebakedWorkspaceBundle<TBundle extends { files: Map<s
 ): Promise<TBundle | undefined> {
 	let decision = 'reused';
 	let actualHash: string | undefined;
+	let fileDifference: Record<string, unknown> = {};
 	const { verifiedBundles } = options;
 	const bundle = await traceSandboxOperation(
 		'check-bundle',
@@ -45,7 +50,7 @@ export async function loadPrebakedWorkspaceBundle<TBundle extends { files: Map<s
 			kind: 'batch',
 			inputs: { manifestPath: options.manifestPath, expectedHash: options.expectedHash },
 			processResult: (result) => ({
-				outputs: { decision, actualHash, fileCount: result?.files.size ?? 0 },
+				outputs: { decision, actualHash, fileCount: result?.files.size ?? 0, ...fileDifference },
 			}),
 		},
 		async () => {
@@ -77,6 +82,13 @@ export async function loadPrebakedWorkspaceBundle<TBundle extends { files: Map<s
 			actualHash = manifest.hash;
 			if (manifest.hash !== options.expectedHash) {
 				decision = 'stale';
+				const expectedBundle = await options.buildBundle();
+				if (expectedBundle) {
+					fileDifference = describeManifestFileDifference(
+						listManifestFiles(expectedBundle.files, options.manifestPath),
+						manifest.files,
+					);
+				}
 				return undefined;
 			}
 
@@ -96,6 +108,7 @@ export async function loadPrebakedWorkspaceBundle<TBundle extends { files: Map<s
 		decision,
 		expectedHash: options.expectedHash,
 		...(actualHash !== undefined ? { actualHash } : {}),
+		...fileDifference,
 	});
 	return bundle;
 }

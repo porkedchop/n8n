@@ -27,6 +27,7 @@ import {
 	materializeRuntimeSkillsIntoWorkspace,
 } from '../materialize-runtime-skills';
 import { INSTANCE_AI_PROMPT_PROFILES } from '../../prompts/prompt-profiles';
+import { listManifestFiles } from '../../workspace/workspace-manifest';
 import {
 	INSTANCE_AI_SKILLS_DIR,
 	loadInstanceAiPromptSkills,
@@ -151,7 +152,9 @@ describe('materializeRuntimeSkillsIntoWorkspace', () => {
 		expect(bundle.manifest).toEqual({
 			schemaVersion: RUNTIME_SKILL_MANIFEST_SCHEMA_VERSION,
 			skillsHash: source.registry.skillsHash,
+			files: listManifestFiles(bundle.files, manifestPath),
 		});
+		expect(bundle.manifest.files).toContain(SANDBOX_RUNTIME_SKILL_REGISTRY_FILE);
 		expect(bundle.env).toMatchObject({
 			[N8N_WORKSPACE_DIR_ENV]: root,
 			[N8N_SKILLS_DIR_ENV]: `${root}/${SANDBOX_RUNTIME_SKILLS_DIR}`,
@@ -214,6 +217,7 @@ describe('materializeRuntimeSkillsIntoWorkspace', () => {
 		expect(manifest).toEqual({
 			schemaVersion: RUNTIME_SKILL_MANIFEST_SCHEMA_VERSION,
 			skillsHash: source.registry.skillsHash,
+			files: listManifestFiles(writes, manifestPath),
 		});
 
 		expect(materialized?.env).toMatchObject({

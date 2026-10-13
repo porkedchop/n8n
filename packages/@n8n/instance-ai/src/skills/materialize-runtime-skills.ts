@@ -23,7 +23,7 @@ import {
 	type VerifiedWorkspaceBundles,
 } from '../workspace/prebaked-workspace-bundle';
 import { stringifyWorkspaceJson, withTrailingNewline } from '../workspace/workspace-file-content';
-import { WORKSPACE_MANIFEST_FILE } from '../workspace/workspace-manifest';
+import { listManifestFiles, WORKSPACE_MANIFEST_FILE } from '../workspace/workspace-manifest';
 
 export const SANDBOX_RUNTIME_SKILLS_DIR = 'skills';
 export const SANDBOX_RUNTIME_SKILL_REGISTRY_FILE = 'registry.json';
@@ -51,6 +51,7 @@ export interface MaterializedRuntimeSkills {
 export interface RuntimeSkillWorkspaceManifest {
 	schemaVersion: typeof RUNTIME_SKILL_MANIFEST_SCHEMA_VERSION;
 	skillsHash: string;
+	files: string[];
 }
 
 export interface RuntimeSkillWorkspaceBundle extends MaterializedRuntimeSkills {
@@ -562,6 +563,7 @@ export async function buildRuntimeSkillWorkspaceBundle({
 	const manifest: RuntimeSkillWorkspaceManifest = {
 		schemaVersion: RUNTIME_SKILL_MANIFEST_SCHEMA_VERSION,
 		skillsHash: source.registry.skillsHash,
+		files: listManifestFiles(files, manifestPath),
 	};
 	files.set(manifestPath, stringifyWorkspaceJson(manifest));
 

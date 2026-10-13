@@ -29,7 +29,7 @@ import {
 } from '../workspace/prebaked-workspace-bundle';
 import type { SandboxWorkspace } from '../workspace/sandbox-fs';
 import { stringifyWorkspaceJson, withTrailingNewline } from '../workspace/workspace-file-content';
-import { WORKSPACE_MANIFEST_FILE } from '../workspace/workspace-manifest';
+import { listManifestFiles, WORKSPACE_MANIFEST_FILE } from '../workspace/workspace-manifest';
 
 export const SANDBOX_KNOWLEDGE_BASE_DIR = 'knowledge-base';
 export const KNOWLEDGE_BASE_BEST_PRACTICES_DIR = 'best-practices';
@@ -83,6 +83,7 @@ export interface KnowledgeBaseRootIndex {
 export interface KnowledgeBaseWorkspaceManifest {
 	schemaVersion: typeof KNOWLEDGE_BASE_MANIFEST_SCHEMA_VERSION;
 	contentHash: string;
+	files: string[];
 }
 
 export interface KnowledgeBaseWorkspaceBundle {
@@ -288,6 +289,7 @@ export async function buildKnowledgeBaseWorkspaceBundle(
 	const manifest: KnowledgeBaseWorkspaceManifest = {
 		schemaVersion: KNOWLEDGE_BASE_MANIFEST_SCHEMA_VERSION,
 		contentHash,
+		files: listManifestFiles(files, manifestPath),
 	};
 	files.set(manifestPath, stringifyWorkspaceJson(manifest));
 

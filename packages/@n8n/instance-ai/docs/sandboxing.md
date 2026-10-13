@@ -135,7 +135,8 @@ last. A matching manifest is trusted, and setup reads no other bundle file.
 Each cached sandbox entry keeps the result, so later runs do not read the
 manifest again.
 
-With `N8N_LOG_LEVEL=debug`, these messages show the bundle file traffic:
+Each manifest also lists the bundle files. With `N8N_LOG_LEVEL=debug`, these
+messages show the bundle file traffic:
 
 | Message                             | Content                                                                 |
 | ----------------------------------- | ----------------------------------------------------------------------- |
@@ -144,6 +145,10 @@ With `N8N_LOG_LEVEL=debug`, these messages show the bundle file traffic:
 | `Read workspace file`               | Path, transport, result, bytes, and duration                            |
 | `Wrote workspace file`              | Path, transport, bytes, and duration                                    |
 | `Wrote workspace files`             | File count, bytes, and duration of a batch write                        |
+
+For a stale manifest, the check message also lists the files that are only
+in the expected bundle (`notInSandbox`) or only in the sandbox manifest
+(`notExpected`).
 
 When `N8N_INSTANCE_AI_SANDBOX_LINK_SDK` is enabled for local development,
 Instance AI packs and installs the local `@n8n/utils`, `@n8n/errors`,

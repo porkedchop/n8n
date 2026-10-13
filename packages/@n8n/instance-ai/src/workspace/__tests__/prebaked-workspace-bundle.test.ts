@@ -313,7 +313,7 @@ describe('prebaked bundle checks with verified bundles', () => {
 		expect(verifiedBundles.get(manifestPath)).toBe(bundle.contentHash);
 	});
 
-	it('logs the decision of a stale manifest', async () => {
+	it('logs the decision and the file difference of a stale manifest', async () => {
 		const { workspace } = createSandboxWorkspace(
 			new Map([
 				[
@@ -345,6 +345,10 @@ describe('prebaked bundle checks with verified bundles', () => {
 			decision: 'stale',
 			expectedHash: bundle.contentHash,
 			actualHash: 'stale',
+			notInSandboxCount: 1,
+			notInSandbox: ['b.txt'],
+			notExpectedCount: 1,
+			notExpected: ['old.txt'],
 		});
 	});
 
