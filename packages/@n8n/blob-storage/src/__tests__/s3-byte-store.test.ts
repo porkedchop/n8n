@@ -180,3 +180,39 @@ describe('delete', () => {
 		expect(objectStoreService.deleteByKeys).not.toHaveBeenCalled();
 	});
 });
+
+describe('deletePrefix', () => {
+	it('should delete each listed page before reading the next', async () => {
+		objectStoreService.getListPage
+			.mockResolvedValueOnce({
+				contents: [{ key: 'w/1/binary_data/a' }, { key: 'w/1/binary_data/b' }],
+				isTruncated: true,
+				nextContinuationToken: 'token',
+			} as never)
+			.mockResolvedValueOnce({
+				contents: [{ key: 'w/1/binary_data/c' }],
+				isTruncated: false,
+				nextContinuationToken: undefined,
+			} as never);
+
+		await store.deletePrefix('w/1/binary_data');
+
+		expect(objectStoreService.getListPage).toHaveBeenNthCalledWith(
+			1,
+			'w/1/binary_data/',
+			undefined,
+		);
+		expect(objectStoreService.getListPage).toHaveBeenNthCalledWith(2, 'w/1/binary_data/', 'token');
+		expect(objectStoreService.deleteByKeys).toHaveBeenNthCalledWith(1, [
+			'w/1/binary_data/a',
+			'w/1/binary_data/b',
+		]);
+		expect(objectStoreService.deleteByKeys).toHaveBeenNthCalledWith(2, ['w/1/binary_data/c']);
+	});
+
+	it.each(['', '.', '/', './', '..', 'a/../b'])('should reject prefix %j', async (prefix) => {
+		await expect(store.deletePrefix(prefix)).rejects.toThrow();
+
+		expect(objectStoreService.getListPage).not.toHaveBeenCalled();
+	});
+});

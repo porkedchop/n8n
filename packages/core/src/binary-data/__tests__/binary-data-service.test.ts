@@ -60,6 +60,60 @@ describe('BinaryDataService', () => {
 		});
 	});
 
+	describe('deleteMany', () => {
+		const locations: BinaryData.FileLocation[] = [
+			{ type: 'execution', workflowId: 'w', executionId: 'e' },
+		];
+
+		const setup = (mode: BinaryData.ServiceMode) => {
+			const fsManager = mock<BinaryData.Manager>();
+			const azureManager = mock<BinaryData.Manager>();
+			service.setManager('filesystem', fsManager);
+			service.setManager('filesystem-v2', fsManager);
+			service.setManager('azure', azureManager);
+			// `init()` sets the mode and creates real managers, so set the mode directly.
+			Object.assign(service, { mode });
+			return { fsManager, azureManager };
+		};
+
+		it('should delete from both Azure and disk in azure mode', async () => {
+			const { fsManager, azureManager } = setup('azure');
+
+			await service.deleteMany(locations);
+
+			expect(azureManager.deleteMany).toHaveBeenCalledWith(locations);
+			expect(fsManager.deleteMany).toHaveBeenCalledWith(locations);
+		});
+
+		it('should call the shared filesystem manager once in filesystem mode', async () => {
+			const { fsManager } = setup('filesystem-v2');
+
+			await service.deleteMany(locations);
+
+			expect(fsManager.deleteMany).toHaveBeenCalledTimes(1);
+		});
+
+		it('should still delete from disk when Azure fails', async () => {
+			const { fsManager, azureManager } = setup('azure');
+			azureManager.deleteMany!.mockRejectedValue(new Error('azure down'));
+
+			await expect(service.deleteMany(locations)).rejects.toThrow(AggregateError);
+
+			expect(fsManager.deleteMany).toHaveBeenCalledWith(locations);
+			expect(errorReporter.error).toHaveBeenCalledTimes(1);
+		});
+
+		it('should still delete from Azure when disk fails', async () => {
+			const { fsManager, azureManager } = setup('azure');
+			fsManager.deleteMany!.mockRejectedValue(new Error('disk failure'));
+
+			await expect(service.deleteMany(locations)).rejects.toThrow(AggregateError);
+
+			expect(azureManager.deleteMany).toHaveBeenCalledWith(locations);
+			expect(errorReporter.error).toHaveBeenCalledTimes(1);
+		});
+	});
+
 	describe('manager dispatch', () => {
 		it('should route an azure-mode binary id to the registered azure manager', async () => {
 			const fileId = 'workflows/w/executions/e/binary_data/uuid';
